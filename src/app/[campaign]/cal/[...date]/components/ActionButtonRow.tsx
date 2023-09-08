@@ -18,7 +18,11 @@ const ActionButtonRow = ({ date, dm, dmBusy }: ActionButtonRowProps) => {
   const requestDate = () => console.log("request", date);
   const confirmDate = () => console.log("confirm", date);
   return (
-    <div className={`BtnRow w-full px-8 justify-between items-center flex`}>
+    <div
+      className={`BtnRow w-full px-8 items-center flex ${
+        dmBusy && !dm ? "justify-center" : "justify-between"
+      }`}
+    >
       {dmBusy && !dm ? (
         <></>
       ) : (
@@ -36,7 +40,10 @@ const ActionButtonRow = ({ date, dm, dmBusy }: ActionButtonRowProps) => {
           icon={StarIcon}
           onClick={confirmDate}
         />
-      ) : dmBusy ? (
+      ) : (
+        <></>
+      )}
+      {dmBusy && !dm ? (
         <ActionButton
           color="text-brand-purple-light"
           label="Request"
