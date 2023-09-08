@@ -84,6 +84,7 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
         });
 
   const allDays = [...leadingDays, ...currentMonthDays, ...trailingDays];
+  console.log(allDays.map((d) => format(d, "MM/dd")));
 
   const dates: {
     date: Date;
@@ -91,11 +92,9 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
     dmBusy: boolean;
     availablePeople: string[];
     busyPeople: string[];
-  }[] = allDays.map((_, index) => {
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + index);
+  }[] = allDays.map((d) => {
     return {
-      date: currentDate,
+      date: d,
       confirmed: false,
       dmBusy: true,
       // availablePeople: ["Dylan", "Brian", "Andrew", "PJ"],
