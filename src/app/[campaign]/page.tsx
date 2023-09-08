@@ -6,47 +6,60 @@ import { format } from "date-fns";
 import CrownIcon from "@/assets/crown.svg";
 import CrownIconTrans from "@/assets/crown-trans.svg";
 import Image from "next/image";
-import { useRouter, redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-export default function HomePage() {
-  const campaignCookie = Cookies.get("campaign");
-  if (campaignCookie) redirect(`/${encodeURI(campaignCookie)}`);
-
+type CampaignLinkedLoginProps = {
+  params: { campaign: string };
+};
+export default function CampaignLinkedLogin({
+  params: { campaign },
+}: CampaignLinkedLoginProps) {
   const [dm, setDm] = useState(false);
-  const [campaign, setCampaign] = useState<string | null>(
-    campaignCookie || null
-  );
   const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
     Cookies.remove("dm");
     Cookies.remove("name");
+    if (
+      campaign &&
+      (!Cookies.get("campaign") || Cookies.get("campaign") !== campaign)
+    )
+      Cookies.set("campaign", decodeURI(campaign));
   }, []);
 
   const router = useRouter();
   const handleSubmit = () => {
-    if (!name || !campaign) {
-      alert(
-        "Please fill out the Campaign name and your name before continuing"
-      );
+    if (!name) {
+      alert("Please fill out your name before continuing");
       return;
     }
     Cookies.set("dm", dm.toString());
-    Cookies.set("campaign", campaign || "");
     Cookies.set("name", name || "");
 
     router.push(`/${campaign}/cal/${format(new Date(), "yyyy/MM")}`);
   };
 
+  const changeCampaign = () => {
+    Cookies.remove("campaign");
+    router.push("/");
+  };
+
   return (
     <div className="h-full w-full flex flex-col justify-between items-center gap-4">
       <h1 className="text-3xl">DND Scheduler</h1>
-      <input
-        className="max-w-lg w-full rounded-2xl border border-brand-purple-light text-white text-base font-semibold bg-transparent p-2 outline-none"
-        placeholder="Campaign"
-        value={campaign || ""}
-        onChange={(e) => setCampaign(e.target.value)}
-      />
+      <div className="w-full text-center">
+        <div className="self-stretch p-2 justify-center items-center gap-3 flex">
+          <h1 className="text-center text-white text-2xl font-semibold">
+            {decodeURI(campaign)}
+          </h1>
+          <button
+            className="text-lg text-white font-thin w-7 h-7 aspect-square rounded-full bg-brand-purple-light"
+            onClick={changeCampaign}
+          >
+            X
+          </button>
+        </div>
+      </div>
       <input
         className="max-w-lg w-full rounded-2xl border border-brand-purple-light text-white text-base font-semibold bg-transparent p-2 outline-none"
         placeholder="Your Name"
