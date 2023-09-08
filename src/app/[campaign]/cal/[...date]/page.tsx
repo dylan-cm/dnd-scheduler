@@ -104,7 +104,14 @@ const CalendarPage = async ({ params: { date } }: CalendarPageProps) => {
   const user = fetchUser();
   if (Object.values(user).some((item) => item === "")) redirect("/");
 
-  if (date.length < 2 || date.length > 3) return <p>Invalid Date</p>;
+  if (date.length < 2 || date.length > 3) {
+    redirect(
+      `/${user.campaign}/cal/${format(new Date(), "yyyy")}/${format(
+        new Date(),
+        "MM"
+      )}`
+    );
+  }
 
   const year = Number(date[0]);
   const month = Number(date[1]);
