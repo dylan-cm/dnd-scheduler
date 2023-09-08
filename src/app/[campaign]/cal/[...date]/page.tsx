@@ -12,13 +12,13 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import LinkIcon from "@/assets/link.svg";
-import StarIcon from "@/assets/.svg";
+import StarIcon from "@/assets/star.svg";
 import HandIcon from "@/assets/hand.svg";
 import CheckIcon from "@/assets/check.svg";
 import XIcon from "@/assets/x.svg";
 import GroupIcon from "@/assets/group.svg";
 import CrownIcon from "@/assets/crown-purple.svg";
+
 import ActionButton from "./components/ActionButton";
 import DayButton from "./components/DayButton";
 import LinkCopier from "./components/LinkCopier";
@@ -223,6 +223,44 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
             />
           ))}
         </div>
+        {/* Action Buttons */}
+        {selectedDate !== null ? (
+          <div
+            className={`BtnRow self-stretch px-8 justify-between items-center flex`}
+          >
+            <ActionButton
+              color="text-brand-red"
+              label="Busy"
+              icon={XIcon}
+              date={selectedDate}
+            />
+            {user.dm ? (
+              <ActionButton
+                color="text-brand-yellow"
+                label="Confirm"
+                icon={StarIcon}
+                date={selectedDate}
+              />
+            ) : dates[0].dmBusy ? (
+              <ActionButton
+                color="text-brand-purple-light"
+                label="Request"
+                icon={HandIcon}
+                date={selectedDate}
+              />
+            ) : (
+              <></>
+            )}
+            <ActionButton
+              color="text-brand-green"
+              label="Available"
+              icon={CheckIcon}
+              date={selectedDate}
+            />
+          </div>
+        ) : (
+          <></>
+        )}
         {/* Date info */}
         <div className="self-stretch flex-col justify-start items-start gap-1.5 flex">
           {selectedDate !== null ? (
@@ -283,68 +321,3 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
 };
 
 export default CalendarPage;
-
-export function Home() {
-  // const setDateAvailable = () =>
-  //   console.log("available", selectedDate && dates[selectedDate].date);
-  // const setDateBusy = () =>
-  //   console.log("busy", selectedDate && dates[selectedDate].date);
-  // const requestDate = () =>
-  //   console.log("request", selectedDate && dates[selectedDate].date);
-  // const confirmDate = () =>
-  //   console.log("confirm", selectedDate && dates[selectedDate].date);
-
-  return (
-    <main className="flex min-h-screen w-full h-full flex-col items-center justify-between p-4 bg-brand-purple-dark">
-      <div className="Wrapper w-full max-w-xl min-h-full flex-col justify-center items-center gap-9 flex">
-        <div className="Campaign self-stretch p-2 justify-center items-center gap-3 flex">
-          <h1 className="text-center text-white text-2xl font-semibold">
-            {"Andrew's Campaign"}
-          </h1>
-          <Image
-            src={LinkIcon}
-            alt="Copy link to campaign"
-            className="cursor-pointer"
-          />
-        </div>
-
-        {/* <div
-          className={`BtnRow self-stretch px-8 justify-between items-center flex ${
-            name === "" ? "opacity-10 pointer-events-none" : ""
-          }`}
-        >
-          <ActionButton
-            color="text-brand-red"
-            label="Busy"
-            icon={XIcon}
-            onClick={setDateBusy}
-          />
-          {dmMode ? (
-            <ActionButton
-              color="text-brand-yellow"
-              label="Confirm"
-              icon={StarIcon}
-              onClick={confirmDate}
-            />
-          ) : selectedDate !== null &&
-            dates[selectedDate].busyPeople.find((name) => name === DM_NAME) ? (
-            <ActionButton
-              color="text-brand-purple-light"
-              label="Request"
-              icon={HandIcon}
-              onClick={requestDate}
-            />
-          ) : (
-            <></>
-          )}
-          <ActionButton
-            color="text-brand-green"
-            label="Available"
-            icon={CheckIcon}
-            onClick={setDateAvailable}
-          />
-        </div> */}
-      </div>
-    </main>
-  );
-}
