@@ -7,15 +7,13 @@ interface ActionButtonProps {
   color: string;
   label: string;
   icon: string | StaticImport;
-  date: Date;
+  onClick: () => void;
 }
-const ActionButton = ({ color, label, icon, date }: ActionButtonProps) => {
-  const handleClick = () => console.log(label, date);
-
+const ActionButton = ({ color, label, icon, onClick }: ActionButtonProps) => {
   return (
     <button
       className="AvailableBtn flex flex-col gap-1 items-center"
-      onClick={handleClick}
+      onClick={onClick}
     >
       <Image src={icon} alt={`Set ${label}`} />
       <span

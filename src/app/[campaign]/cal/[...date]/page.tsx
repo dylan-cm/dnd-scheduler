@@ -12,52 +12,39 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import StarIcon from "@/assets/star.svg";
-import HandIcon from "@/assets/hand.svg";
-import CheckIcon from "@/assets/check.svg";
-import XIcon from "@/assets/x.svg";
 import GroupIcon from "@/assets/group.svg";
 import CrownIcon from "@/assets/crown-purple.svg";
 
-import ActionButton from "./components/ActionButton";
 import DayButton from "./components/DayButton";
 import LinkCopier from "./components/LinkCopier";
+import ActionButtonRow from "./components/ActionButtonRow";
+
+type Data = {
+  date: Date;
+  confirmed: boolean;
+  dmBusy: boolean;
+  availablePeople: string[];
+  busyPeople: string[];
+};
 
 function fetchUser() {
   const dm = cookies().get("dm");
   const user = {
-    dm: dm === undefined ? undefined : dm.value === "true",
+    dm: dm === undefined ? false : dm.value === "true",
     name:
       cookies().get("name") === undefined
-        ? undefined
+        ? ""
         : decodeURI(cookies().get("name")?.value || ""),
     campaign:
       cookies().get("campaign") === undefined
-        ? undefined
+        ? ""
         : decodeURI(cookies().get("campaign")?.value || ""),
   };
   return user;
 }
 
-type CalendarPageProps = {
-  params: { date: string[] };
-};
-
-const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
-  const user = fetchUser();
-  if (Object.values(user).some((item) => item === undefined)) redirect("/");
-
-  if (date.length < 2 || date.length > 3) return <p>Invalid Date</p>;
-  const year = Number(date[0]);
-  const month = Number(date[1]);
-  const selectedDay = Number(date[2]) || null;
-  const selectedDate =
-    selectedDay === null ? null : new Date(year, month - 1, selectedDay);
-
-  // Define the start and end days of the month
-  const startDate = startOfMonth(new Date(year, month - 1));
-  const endDate = endOfMonth(new Date(year, month - 1));
-
+// fetch data on server
+async function fetchData(startDate: Date, endDate: Date): Promise<Data[]> {
   // Calculate leading and trailing days
   const daysBefore = (startDate.getDay() + 6) % 7; // Adjust for Monday as the first day of the week
   const daysAfter = 6 - ((endDate.getDay() + 6) % 7); // Adjust for Monday as the first day of the week
@@ -84,34 +71,52 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
         });
 
   const allDays = [...leadingDays, ...currentMonthDays, ...trailingDays];
-  console.log(allDays.map((d) => format(d, "MM/dd")));
-
-  const dates: {
-    date: Date;
-    confirmed: boolean;
-    dmBusy: boolean;
-    availablePeople: string[];
-    busyPeople: string[];
-  }[] = allDays.map((d) => {
+  return allDays.map((d) => {
     return {
       date: d,
       confirmed: false,
       dmBusy: true,
-      // availablePeople: ["Dylan", "Brian", "Andrew", "PJ"],
-      availablePeople: ["Dylan", "Brian", "PJ"],
-      // availablePeople: [],
+      availablePeople: ["Dylan CM", "Brian", "PJ"],
       busyPeople: ["Hannah", "B"],
     };
   });
+}
 
-  const setDateAvailable = () =>
-    console.log("available", selectedDay && dates[selectedDay].date);
-  const setDateBusy = () =>
-    console.log("busy", selectedDay && dates[selectedDay].date);
-  const requestDate = () =>
-    console.log("request", selectedDay && dates[selectedDay].date);
-  const confirmDate = () =>
-    console.log("confirm", selectedDay && dates[selectedDay].date);
+function findDataByDate(date: Date, data: Data[]): Data {
+  return (
+    data.find(
+      (item) => format(item.date, "dd/MM/yy") === format(date, "dd/MM/yy")
+    ) || {
+      date,
+      confirmed: false,
+      dmBusy: false,
+      availablePeople: [],
+      busyPeople: [],
+    }
+  );
+}
+
+type CalendarPageProps = {
+  params: { date: string[] };
+};
+
+const CalendarPage = async ({ params: { date } }: CalendarPageProps) => {
+  const user = fetchUser();
+  if (Object.values(user).some((item) => item === "")) redirect("/");
+
+  if (date.length < 2 || date.length > 3) return <p>Invalid Date</p>;
+
+  const year = Number(date[0]);
+  const month = Number(date[1]);
+  const selectedDay = Number(date[2]) || null;
+  const selectedDate =
+    selectedDay === null ? null : new Date(year, month - 1, selectedDay);
+
+  // Define the start and end days of the month
+  const startDate = startOfMonth(new Date(year, month - 1));
+  const endDate = endOfMonth(new Date(year, month - 1));
+
+  const data = await fetchData(startDate, endDate);
 
   return (
     <main className="flex min-h-screen w-full h-full flex-col items-center justify-between p-4 bg-brand-purple-dark">
@@ -195,13 +200,13 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
         </div>
         {/* Day Grid */}
         <div className="w-full grid grid-cols-7 justify-items-center gap-2">
-          {dates.map((day) => (
+          {data.map((day) => (
             <DayButton
               key={day.date.toString()}
               campaign={user.campaign || ""}
-              votes={3}
+              votes={day.availablePeople.length}
               enabled={user.dm || !day.dmBusy}
-              confirmed={false}
+              confirmed={day.confirmed}
               date={day.date}
               selected={
                 selectedDate !== null &&
@@ -210,11 +215,11 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
               }
               state={
                 day.availablePeople.find(
-                  (name) => name.toLowerCase() === user.name
+                  (name) => name.toLowerCase() === user.name.toLowerCase()
                 )
                   ? "available"
                   : day.busyPeople.find(
-                      (name) => name.toLowerCase() === user.name
+                      (name) => name.toLowerCase() === user.name.toLowerCase()
                     )
                   ? "busy"
                   : null
@@ -224,39 +229,11 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
         </div>
         {/* Action Buttons */}
         {selectedDate !== null ? (
-          <div
-            className={`BtnRow self-stretch px-8 justify-between items-center flex`}
-          >
-            <ActionButton
-              color="text-brand-red"
-              label="Busy"
-              icon={XIcon}
-              date={selectedDate}
-            />
-            {user.dm ? (
-              <ActionButton
-                color="text-brand-yellow"
-                label="Confirm"
-                icon={StarIcon}
-                date={selectedDate}
-              />
-            ) : dates[0].dmBusy ? (
-              <ActionButton
-                color="text-brand-purple-light"
-                label="Request"
-                icon={HandIcon}
-                date={selectedDate}
-              />
-            ) : (
-              <></>
-            )}
-            <ActionButton
-              color="text-brand-green"
-              label="Available"
-              icon={CheckIcon}
-              date={selectedDate}
-            />
-          </div>
+          <ActionButtonRow
+            date={selectedDate}
+            dm={!!user.dm}
+            dmBusy={findDataByDate(selectedDate, data).dmBusy}
+          />
         ) : (
           <></>
         )}
@@ -270,32 +247,37 @@ const CalendarPage = ({ params: { date } }: CalendarPageProps) => {
               <div className="w-full bg-white rounded border border-brand-green gap-2.5 flex">
                 <div className="min-w-12 min-h-full bg-brand-green justify-center items-center gap-1 flex px-4">
                   <h2 className="text-black text-2xl font-bold">
-                    {dates[0].availablePeople.length}
+                    {findDataByDate(selectedDate, data).availablePeople.length}
                   </h2>
                   <Image src={GroupIcon} alt="Attending members" />
                 </div>
                 <div className=" w-full min-h-[64px] p-2 justify-start items-start flex-col">
-                  {dates[0].availablePeople.length ? (
+                  {findDataByDate(selectedDate, data).availablePeople.length ? (
                     <>
                       <span className="text-black text-sm font-normal">
                         Available:
                         <br />
                       </span>
                       <p className="text-black text-md font-medium">
-                        {dates[0].availablePeople.join(", ")}
+                        {findDataByDate(
+                          selectedDate,
+                          data
+                        ).availablePeople.join(", ")}
                       </p>
                     </>
                   ) : (
                     <></>
                   )}
-                  {dates[0].busyPeople.length ? (
+                  {findDataByDate(selectedDate, data).busyPeople.length ? (
                     <>
                       <span className="text-black text-sm font-normal">
                         Busy:
                         <br />
                       </span>
                       <p className="text-black text-md font-medium">
-                        {dates[0].busyPeople.join(", ")}
+                        {findDataByDate(selectedDate, data).busyPeople.join(
+                          ", "
+                        )}
                       </p>
                     </>
                   ) : (
